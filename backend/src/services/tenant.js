@@ -4,6 +4,12 @@
 import { notFound } from '../lib/errors.js'
 import { isId } from '../lib/validate.js'
 
+export async function findById(Model, id, message) {
+  const record = isId(id) ? await Model.findById(id) : null
+  if (!record) throw notFound(message)
+  return record
+}
+
 /** A record of this mess, or a 404. Another mess's record looks missing. */
 export async function findOwned(Model, id, mess, message) {
   const record = isId(id) ? await Model.findOne({ _id: id, messId: mess._id }) : null
