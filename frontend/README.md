@@ -16,7 +16,12 @@ npm run build      # production files in dist/
 ```
 
 In development, requests to `/api` are forwarded to `http://localhost:5000`.
-For a deployed site set `VITE_API_URL` (see `.env.example`).
+For a deployed site set `VITE_API_URL` (see `.env.example`). The full steps are
+in [the deployment guide](../backend/docs/DEPLOYMENT.md).
+
+`vercel.json` makes page addresses work when opened directly and sets the
+security headers. If you load scripts, styles, fonts or images from another
+domain, add it to the Content-Security-Policy there.
 
 ## Screens by role
 
