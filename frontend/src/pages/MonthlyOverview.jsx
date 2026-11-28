@@ -1,13 +1,24 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import DailySheet from '../components/DailySheet.jsx'
 import DataTable from '../components/DataTable.jsx'
+import { Loaded } from '../components/State.jsx'
 import {
-  Button, Card, DateRange, InactiveTag, Notice, PageHeader, StatCard,
+  Button,
+  Card,
+  DateRange,
+  InactiveTag,
+  Notice,
+  PageHeader,
+  StatCard,
 } from '../components/ui.jsx'
-import { useData } from '../data/store.jsx'
-import { monthlyOverview } from '../lib/calculations.js'
+import { useApi } from '../hooks/useApi.js'
 import {
-  datesBetween, formatMoney, isValidDate, monthEndIso, monthStartIso, todayIso,
+  dayCount,
+  formatMoney,
+  isValidDate,
+  monthEndIso,
+  monthStartIso,
+  todayIso,
 } from '../lib/format.js'
 
 const MAX_DAYS = 366
@@ -32,21 +43,17 @@ const SUMMARY_COLUMNS = [
 function rangeProblem(from, to) {
   if (!isValidDate(from) || !isValidDate(to)) return 'Please choose valid dates.'
   if (from > to) return "The 'From' date cannot be greater than the 'To' date."
-  if (datesBetween(from, to).length > MAX_DAYS) return 'Please choose a period of one year or less.'
+  if (dayCount(from, to) > MAX_DAYS) return 'Please choose a period of one year or less.'
   return null
 }
 
 export default function MonthlyOverview() {
-  const { data } = useData()
   const [range, setRange] = useState(() => ({ from: monthStartIso(), to: todayIso() }))
   const [tab, setTab] = useState('summary')
   const { from, to } = range
 
   const problem = rangeProblem(from, to)
-  const overview = useMemo(
-    () => (problem ? null : monthlyOverview(data, from, to)),
-    [data, from, to, problem],
-  )
+  const query = useApi(problem ? null : `/reports/monthly?from=${from}&to=${to}`)
 
   const tabButton = (id, text) => (
     <button
@@ -88,42 +95,49 @@ export default function MonthlyOverview() {
       {problem ? (
         <Notice>{problem}</Notice>
       ) : (
-        <>
-          <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5 wide:grid-cols-4">
-            <StatCard label="TOTAL MEALS (মোট মিল)" value={overview.mealCount} tone="amber" />
-            <StatCard label="TOTAL MARKET (মোট বাজার)" value={formatMoney(overview.marketCost)} tone="red" />
-            <StatCard label="MEAL RATE (মিল রেট)" value={formatMoney(overview.rate)} highlight />
-            <StatCard label="ACTIVE BORDERS (সদস্য)" value={overview.activeMembers} />
-          </div>
+        <Loaded query={query}>
+          {(overview) => (
+            <>
+              <div className="grid grid-cols-2 gap-2.5 sm:gap-3.5 wide:grid-cols-4">
+                <StatCard label="TOTAL MEALS (মোট মিল)" value={overview.mealCount} tone="amber" />
+                <StatCard
+                  label="TOTAL MARKET (মোট বাজার)"
+                  value={formatMoney(overview.marketCost)}
+                  tone="red"
+                />
+                <StatCard label="MEAL RATE (মিল রেট)" value={formatMoney(overview.rate)} highlight />
+                <StatCard label="ACTIVE BORDERS (সদস্য)" value={overview.activeMembers} />
+              </div>
 
-          <div className="-mb-4.5 flex gap-1 overflow-x-auto" role="tablist">
-            {tabButton('summary', '📋 Member Meal Totals')}
-            {tabButton(
-              'sheet',
-              <>
-                🗓️ Daily Sheet <span className="max-sm:hidden">(Member D &amp; N Matrix)</span>
-              </>,
-            )}
-          </div>
+              <div className="-mb-4.5 flex gap-1 overflow-x-auto" role="tablist">
+                {tabButton('summary', '📋 Member Meal Totals')}
+                {tabButton(
+                  'sheet',
+                  <>
+                    🗓️ Daily Sheet <span className="max-sm:hidden">(Member D &amp; N Matrix)</span>
+                  </>,
+                )}
+              </div>
 
-          <Card
-            className="rounded-tl-none!"
-            id="tab-panel"
-            role="tabpanel"
-            aria-labelledby={`tab-${tab}`}
-          >
-            {tab === 'summary' ? (
-              <DataTable columns={SUMMARY_COLUMNS} rows={overview.summary} />
-            ) : (
-              <DailySheet
-                members={overview.members}
-                days={overview.days}
-                summary={overview.summary}
-                mealCount={overview.mealCount}
-              />
-            )}
-          </Card>
-        </>
+              <Card
+                className="rounded-tl-none!"
+                id="tab-panel"
+                role="tabpanel"
+                aria-labelledby={`tab-${tab}`}
+              >
+                {tab === 'summary' ? (
+                  <DataTable columns={SUMMARY_COLUMNS} rows={overview.summary} />
+                ) : (
+                  <DailySheet
+                    members={overview.summary}
+                    days={overview.days}
+                    mealCount={overview.mealCount}
+                  />
+                )}
+              </Card>
+            </>
+          )}
+        </Loaded>
       )}
     </>
   )

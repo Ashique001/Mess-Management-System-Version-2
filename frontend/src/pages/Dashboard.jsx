@@ -1,8 +1,7 @@
-import { useMemo } from 'react'
 import DataTable from '../components/DataTable.jsx'
+import { Loaded } from '../components/State.jsx'
 import { Card, PageHeader, StatCard, Tag } from '../components/ui.jsx'
-import { useData } from '../data/store.jsx'
-import { dashboardSummary, recentActivities } from '../lib/calculations.js'
+import { useApi } from '../hooks/useApi.js'
 import { formatDate, formatMoney } from '../lib/format.js'
 
 const TAG_TONES = { Deposit: 'green', 'Market Expense': 'red', Meal: 'amber' }
@@ -25,7 +24,7 @@ function ActivityList({ activities }) {
       {activities.map((row) => (
         <li key={row.key} className="px-2.5 py-2">
           <div className="flex justify-between gap-2">
-            <span>{row.description}</span>
+            <span className="min-w-0 wrap-anywhere">{row.description}</span>
             <strong className="whitespace-nowrap">{amount(row)}</strong>
           </div>
           <div className="mt-1 flex items-center gap-2 text-slate-500">
@@ -42,37 +41,49 @@ function ActivityList({ activities }) {
 }
 
 export default function Dashboard() {
-  const { data } = useData()
-  const summary = useMemo(() => dashboardSummary(data), [data])
-  const activities = useMemo(() => recentActivities(data), [data])
+  const query = useApi('/reports/dashboard')
 
   return (
     <>
       <PageHeader title="📊 DASHBOARD" subtitle="All-time totals of the mess" />
 
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3.5">
-        <StatCard label="👥 TOTAL MEMBERS" value={summary.activeMembers} />
-        <StatCard label="💰 TOTAL DEPOSIT" value={formatMoney(summary.totalDeposit)} tone="green" />
-        <StatCard label="🛒 TOTAL EXPENSE" value={formatMoney(summary.totalExpense)} tone="red" />
-        <StatCard label="🍲 TOTAL MEALS" value={summary.totalMeals} tone="amber" />
-        <StatCard
-          className="col-span-2"
-          highlight
-          label="⚡ CURRENT MEAL RATE (EXPENSE ÷ MEALS)"
-          value={formatMoney(summary.rate)}
-        />
-      </div>
+      <Loaded query={query}>
+        {(summary) => (
+          <>
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3.5">
+              <StatCard label="👥 TOTAL MEMBERS" value={summary.activeMembers} />
+              <StatCard
+                label="💰 TOTAL DEPOSIT"
+                value={formatMoney(summary.totalDeposit)}
+                tone="green"
+              />
+              <StatCard
+                label="🛒 TOTAL EXPENSE"
+                value={formatMoney(summary.totalExpense)}
+                tone="red"
+              />
+              <StatCard label="🍲 TOTAL MEALS" value={summary.totalMeals} tone="amber" />
+              <StatCard
+                className="col-span-2"
+                highlight
+                label="⚡ CURRENT MEAL RATE (EXPENSE ÷ MEALS)"
+                value={formatMoney(summary.rate)}
+              />
+            </div>
 
-      <Card>
-        <h2 className="mb-3 text-[15px] font-bold">📋 RECENT ACTIVITIES (LIVE STREAM)</h2>
-        <ActivityList activities={activities} />
-        <DataTable
-          className="max-sm:hidden"
-          columns={COLUMNS}
-          rows={activities}
-          rowKey={(row) => row.key}
-        />
-      </Card>
+            <Card>
+              <h2 className="mb-3 text-[15px] font-bold">📋 RECENT ACTIVITIES (LIVE STREAM)</h2>
+              <ActivityList activities={summary.recentActivities} />
+              <DataTable
+                className="max-sm:hidden"
+                columns={COLUMNS}
+                rows={summary.recentActivities}
+                rowKey={(row) => row.key}
+              />
+            </Card>
+          </>
+        )}
+      </Loaded>
     </>
   )
 }

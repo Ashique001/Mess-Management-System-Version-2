@@ -4,4 +4,7 @@ import { defineConfig } from 'vite'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  // In development and preview, /api goes to the local backend.
+  server: { proxy: { '/api': 'http://localhost:5000' } },
+  preview: { proxy: { '/api': 'http://localhost:5000' } },
 })

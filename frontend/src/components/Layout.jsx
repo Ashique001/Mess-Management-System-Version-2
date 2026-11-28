@@ -1,33 +1,20 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router'
-import { useData } from '../data/store.jsx'
-import { useFeedback } from './Feedback.jsx'
-
-const NAV = [
-  { to: '/dashboard', icon: '📊', label: 'Dashboard' },
-  { to: '/members', icon: '👥', label: 'Members' },
-  { to: '/deposits', icon: '💳', label: 'Deposits' },
-  { to: '/market', icon: '🛒', label: 'Market' },
-  { to: '/meals', icon: '🍲', label: 'Meals' },
-  { to: '/monthly', icon: '📅', label: 'Monthly Overview' },
-  { to: '/reports', icon: '📈', label: 'Reports' },
-]
+import { useAuth } from '../auth/AuthContext.jsx'
+import { navigationFor, ROLE_NAMES } from '../auth/roles.js'
 
 const navClass = ({ isActive }) =>
-  `flex min-h-13 items-center gap-3.5 px-5 font-semibold ${
+  `flex min-h-12 items-center gap-3.5 px-5 font-semibold ${
     isActive ? 'bg-blue-600 text-white' : 'text-slate-200 hover:bg-slate-800'
   }`
 
 export default function Layout() {
-  const { data, actions } = useData()
-  const { notify, confirm } = useFeedback()
+  const { user, mess, logout } = useAuth()
   const { pathname } = useLocation()
   // The path on which the menu was opened: moving elsewhere closes it.
   const [openOn, setOpenOn] = useState(null)
-  const [resetCount, setResetCount] = useState(0)
   const menuOpen = openOn === pathname
   const closeMenu = () => setOpenOn(null)
-  const activeCount = data.members.filter((m) => m.active).length
 
   useEffect(() => {
     window.scrollTo(0, 0)
@@ -39,20 +26,6 @@ export default function Layout() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [menuOpen])
-
-  const reset = async () => {
-    const question = 'Replace all current data with fresh sample data? Your changes will be lost.'
-    if (!(await confirm(question, 'Yes, reset'))) return
-    try {
-      await actions.resetData()
-      // Re-create the current page so no form keeps a removed record selected.
-      setResetCount((count) => count + 1)
-      closeMenu()
-      notify('Sample data restored.')
-    } catch (error) {
-      notify(error.message, 'error')
-    }
-  }
 
   return (
     <>
@@ -70,9 +43,7 @@ export default function Layout() {
         <Link to="/" className="truncate text-[15px] font-bold text-white sm:text-lg nav:text-xl">
           🍽️ MESS MEAL MANAGEMENT
         </Link>
-        <span className="ml-auto text-sm whitespace-nowrap text-slate-400 max-sm:hidden">
-          Mess Solution
-        </span>
+        <span className="ml-auto truncate text-sm text-slate-400 max-sm:hidden">{user.name}</span>
       </header>
 
       <aside
@@ -82,13 +53,11 @@ export default function Layout() {
         }`}
       >
         <div className="flex flex-col bg-slate-800 px-5 py-3.5 text-white">
-          <strong>🏠 Herar Alo</strong>
-          <span className="text-[13px] text-slate-400">
-            {activeCount} Active Member{activeCount === 1 ? '' : 's'}
-          </span>
+          <strong className="wrap-anywhere">{mess ? `🏠 ${mess.name}` : '🛡️ Platform'}</strong>
+          <span className="text-[13px] text-slate-400">{ROLE_NAMES[user.role]}</span>
         </div>
         <nav aria-label="Main" className="flex flex-col py-1.5">
-          {NAV.map((item) => (
+          {navigationFor(user.role).map((item) => (
             <NavLink key={item.to} to={item.to} className={navClass} onClick={closeMenu}>
               <span aria-hidden="true">{item.icon}</span>
               {item.label}
@@ -96,22 +65,25 @@ export default function Layout() {
           ))}
         </nav>
         <div className="mt-auto flex flex-col items-start gap-2 bg-slate-800 px-5 py-3.5 text-xs text-slate-400">
-          <span>Demo data, saved in this browser</span>
+          <span className="wrap-anywhere">{user.email}</span>
           <button
             type="button"
             className="rounded-md border border-slate-600 px-3 py-1 text-slate-200"
-            onClick={reset}
+            onClick={logout}
           >
-            Reset data
+            Log out
           </button>
         </div>
       </aside>
       {menuOpen && (
-        <div className="fixed inset-x-0 top-16 bottom-0 z-15 bg-slate-900/50 nav:hidden" onClick={closeMenu} />
+        <div
+          className="fixed inset-x-0 top-16 bottom-0 z-15 bg-slate-900/50 nav:hidden"
+          onClick={closeMenu}
+        />
       )}
 
       <main className="min-h-screen px-3.5 pt-20 pb-24 nav:pt-22 nav:pr-6 nav:pb-8 nav:pl-66">
-        <div className="mx-auto flex max-w-[1400px] flex-col gap-4.5" key={resetCount}>
+        <div className="mx-auto flex max-w-[1400px] flex-col gap-4.5">
           <Outlet />
         </div>
       </main>

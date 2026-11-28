@@ -1,13 +1,25 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import DataTable from '../components/DataTable.jsx'
 import { useFeedback } from '../components/Feedback.jsx'
+import { ErrorState, Loading } from '../components/State.jsx'
 import {
-  Button, Card, DateRange, Hint, InactiveTag, PageHeader, StatCard, TONES,
+  Button,
+  Card,
+  DateRange,
+  Hint,
+  InactiveTag,
+  PageHeader,
+  StatCard,
+  TONES,
 } from '../components/ui.jsx'
-import { useData } from '../data/store.jsx'
-import { memberReport } from '../lib/calculations.js'
+import { useApi } from '../hooks/useApi.js'
 import {
-  formatAmount, formatDate, formatMoney, isValidDate, monthStartIso, todayIso,
+  formatAmount,
+  formatDate,
+  formatMoney,
+  isValidDate,
+  monthStartIso,
+  todayIso,
 } from '../lib/format.js'
 
 const COLUMNS = [
@@ -37,16 +49,12 @@ const COLUMNS = [
 ]
 
 export default function Reports() {
-  const { data } = useData()
   const { notify } = useFeedback()
   const [range, setRange] = useState(() => ({ from: monthStartIso(), to: todayIso() }))
   // The period that was last calculated.
   const [period, setPeriod] = useState(null)
-
-  const report = useMemo(
-    () => (period ? memberReport(data, period.from, period.to) : null),
-    [data, period],
-  )
+  const query = useApi(period ? `/reports/settlement?from=${period.from}&to=${period.to}` : null)
+  const report = query.data
 
   const calculate = (event) => {
     event.preventDefault()
@@ -54,6 +62,8 @@ export default function Reports() {
       notify('Please choose valid dates.', 'warning')
     } else if (range.from > range.to) {
       notify('From date cannot be greater than To date.', 'warning')
+    } else if (period?.from === range.from && period.to === range.to) {
+      query.reload()
     } else {
       setPeriod(range)
     }
@@ -71,7 +81,9 @@ export default function Reports() {
       >
         <span className="text-[13px] font-bold text-slate-500 max-sm:w-full">PERIOD FILTER:</span>
         <DateRange from={range.from} to={range.to} onChange={setRange} />
-        <Button type="submit" className="max-sm:flex-1">⚡ Calculate</Button>
+        <Button type="submit" className="max-sm:flex-1" disabled={query.loading}>
+          {query.loading ? 'Calculating…' : '⚡ Calculate'}
+        </Button>
       </Card>
 
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3.5">
@@ -85,18 +97,26 @@ export default function Reports() {
         />
       </div>
 
+      {query.error && <ErrorState error={query.error} onRetry={query.reload} />}
+
       <Card>
-        {period && (
+        {report && (
           <Hint>
             Report from {formatDate(period.from)} to {formatDate(period.to)}. A negative balance
             means the member owes money.
           </Hint>
         )}
-        <DataTable
-          columns={COLUMNS}
-          rows={report?.rows ?? []}
-          emptyText={period ? 'No members in this period.' : 'Choose a period and press Calculate.'}
-        />
+        {query.loading && !report ? (
+          <Loading />
+        ) : (
+          <DataTable
+            columns={COLUMNS}
+            rows={report?.rows ?? []}
+            emptyText={
+              report ? 'No members in this period.' : 'Choose a period and press Calculate.'
+            }
+          />
+        )}
       </Card>
     </>
   )
