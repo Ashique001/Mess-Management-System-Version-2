@@ -4,6 +4,7 @@
 import cors from 'cors'
 import express from 'express'
 import helmet from 'helmet'
+import mongoose from 'mongoose'
 import { getConfig } from './config.js'
 import { onConnect } from './db.js'
 import { allow, authenticate, requireActiveMess } from './middleware/auth.js'
@@ -45,7 +46,11 @@ app.get('/', (req, res) => res.json({ name: 'Mess Meal Management API' }))
 
 // Everything under /api needs the database.
 app.use('/api', requireDatabase)
-app.get('/api/health', (req, res) => res.json({ status: 'ok' }))
+app.get('/api/health', async (req, res) => {
+  // A real round trip, so a lost connection is reported.
+  await mongoose.connection.db.admin().ping()
+  res.json({ status: 'ok' })
+})
 app.use('/api/auth', authRouter)
 
 // A mess's own data: only for that mess's admin and managers.
