@@ -5,8 +5,13 @@ import cors from 'cors'
 import express from 'express'
 import helmet from 'helmet'
 import { getConfig } from './config.js'
+import { onConnect } from './db.js'
 import { requireDatabase } from './middleware/database.js'
 import { errorHandler, notFoundHandler } from './middleware/errors.js'
+import { authRouter } from './routes/auth.js'
+import { ensureSuperAdmin } from './services/accounts.js'
+
+onConnect(ensureSuperAdmin)
 
 const app = express()
 
@@ -28,7 +33,11 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '100kb' }))
 
 app.get('/', (req, res) => res.json({ name: 'Mess Meal Management API' }))
-app.get('/api/health', requireDatabase, (req, res) => res.json({ status: 'ok' }))
+
+// Everything under /api needs the database.
+app.use('/api', requireDatabase)
+app.get('/api/health', (req, res) => res.json({ status: 'ok' }))
+app.use('/api/auth', authRouter)
 
 app.use(notFoundHandler)
 app.use(errorHandler)
