@@ -9,11 +9,22 @@ const BUTTONS = {
   soft: 'bg-blue-50 text-blue-700',
 }
 
-export function Button({ variant = 'blue', type = 'button', className = '', ...props }) {
+const SIZES = {
+  md: 'min-h-10 px-4 py-2 text-sm',
+  sm: 'min-h-8 px-2.5 py-1 text-[13px] whitespace-nowrap',
+}
+
+export function Button({
+  variant = 'blue',
+  size = 'md',
+  type = 'button',
+  className = '',
+  ...props
+}) {
   return (
     <button
       type={type}
-      className={`min-h-10 rounded-md border border-transparent px-4 py-2 text-sm font-semibold hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50 ${BUTTONS[variant]} ${className}`}
+      className={`rounded-md border border-transparent font-semibold hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50 ${SIZES[size]} ${BUTTONS[variant]} ${className}`}
       {...props}
     />
   )

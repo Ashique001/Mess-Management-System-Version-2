@@ -18,6 +18,17 @@ npm run build      # production files in dist/
 In development, requests to `/api` are forwarded to `http://localhost:5000`.
 For a deployed site set `VITE_API_URL` (see `.env.example`).
 
+## Screens by role
+
+| Role | Screens |
+|---|---|
+| Visitor | Front page, log in, register a mess |
+| Super admin | All messes: approve, suspend, member limit, passwords, delete |
+| Mess admin | Everything a manager has, plus Team and Settings |
+| Manager | Dashboard, members, deposits, market, meals, monthly overview, reports |
+
+Everyone who is logged in can change their own password.
+
 ## Layout
 
 | Folder | Contents |
