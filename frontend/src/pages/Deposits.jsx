@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import CrudPage from '../components/CrudPage.jsx'
-import { Field } from '../components/ui.jsx'
+import { Field, Input, Select } from '../components/ui.jsx'
 import { useData } from '../data/store.jsx'
 import { sortByName } from '../lib/calculations.js'
 import { formatDate, formatMoney, todayIso } from '../lib/format.js'
@@ -14,8 +14,8 @@ const toForm = (deposit) => ({
 })
 
 const COLUMNS = [
-  { key: 'id', label: 'ID', className: 'hide-small' },
-  { key: 'memberName', label: 'Member', className: 'wrap' },
+  { key: 'id', label: 'ID', hideSmall: true },
+  { key: 'memberName', label: 'Member', wrap: true },
   { key: 'date', label: 'Date', render: (d) => formatDate(d.date) },
   { key: 'amount', label: 'Amount', align: 'right', render: (d) => formatMoney(d.amount) },
 ]
@@ -53,20 +53,20 @@ export default function Deposits() {
         return (
           <>
             <Field label="Select Member:">
-              <select value={form.memberId} onChange={setField('memberId')}>
+              <Select value={form.memberId} onChange={setField('memberId')}>
                 <option value="">— Select —</option>
                 {options.map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.name}{m.active ? '' : ' (Inactive)'}
                   </option>
                 ))}
-              </select>
+              </Select>
             </Field>
             <Field label="Deposit Date:">
-              <input type="date" value={form.date} onChange={setField('date')} />
+              <Input type="date" value={form.date} onChange={setField('date')} />
             </Field>
             <Field label="Deposit Amount (৳):">
-              <input
+              <Input
                 inputMode="decimal"
                 value={form.amount}
                 onChange={setField('amount')}

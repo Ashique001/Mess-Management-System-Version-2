@@ -2,8 +2,15 @@
 // version's message boxes.
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { Button } from './ui.jsx'
 
 const FeedbackContext = createContext(null)
+
+const TOASTS = {
+  success: 'bg-emerald-700',
+  warning: 'bg-amber-800',
+  error: 'bg-red-700',
+}
 
 export function FeedbackProvider({ children }) {
   const [toast, setToast] = useState(null)
@@ -42,11 +49,23 @@ export function FeedbackProvider({ children }) {
     <FeedbackContext.Provider value={value}>
       {children}
 
-      <div className="toast-area" role="status" aria-live="polite">
+      <div
+        className="fixed right-3 bottom-3 left-3 z-50 sm:right-5 sm:bottom-5 sm:left-auto sm:max-w-md"
+        role="status"
+        aria-live="polite"
+      >
         {toast && (
-          <div key={toast.id} className={`toast toast-${toast.type}`}>
+          <div
+            key={toast.id}
+            className={`flex items-start justify-between gap-3 rounded-lg py-3 pr-3.5 pl-4 text-white shadow-xl ${TOASTS[toast.type]}`}
+          >
             <span>{toast.message}</span>
-            <button type="button" aria-label="Close message" onClick={() => setToast(null)}>
+            <button
+              type="button"
+              className="text-xl leading-none"
+              aria-label="Close message"
+              onClick={() => setToast(null)}
+            >
               ×
             </button>
           </div>
@@ -56,20 +75,18 @@ export function FeedbackProvider({ children }) {
       {question && (
         <dialog
           ref={dialogRef}
-          className="dialog"
+          className="m-auto w-[min(400px,calc(100vw-32px))] rounded-xl p-5.5 text-slate-900 backdrop:bg-slate-900/50"
           onCancel={(event) => {
             event.preventDefault()
             answer(false)
           }}
         >
           <p>{question.message}</p>
-          <div className="dialog-actions">
-            <button type="button" className="btn btn-plain" autoFocus onClick={() => answer(false)}>
+          <div className="mt-5 flex justify-end gap-2.5">
+            <Button variant="plain" autoFocus onClick={() => answer(false)}>
               No
-            </button>
-            <button type="button" className="btn btn-blue" onClick={() => answer(true)}>
-              {question.confirmLabel}
-            </button>
+            </Button>
+            <Button onClick={() => answer(true)}>{question.confirmLabel}</Button>
           </div>
         </dialog>
       )}

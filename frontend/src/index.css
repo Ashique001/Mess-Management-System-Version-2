@@ -1,0 +1,37 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Segoe UI', system-ui, -apple-system, Roboto, 'Noto Sans Bengali', 'Nirmala UI',
+    sans-serif;
+  /* The sidebar is shown from "nav" up, two-column form pages from "wide" up. */
+  --breakpoint-nav: 54rem;
+  --breakpoint-wide: 69rem;
+}
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900;
+  }
+
+  button:not(:disabled),
+  select:not(:disabled),
+  [type='checkbox'] {
+    cursor: pointer;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-blue-400);
+    outline-offset: 1px;
+  }
+
+  textarea {
+    resize: vertical;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
