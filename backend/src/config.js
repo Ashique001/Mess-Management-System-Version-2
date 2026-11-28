@@ -14,6 +14,8 @@ const list = (text) =>
 
 export function getConfig(env = process.env) {
   const isProduction = env.NODE_ENV === 'production'
+  const superEmail = env.SUPERADMIN_EMAIL?.trim().toLowerCase()
+  const superPassword = env.SUPERADMIN_PASSWORD
   return {
     isProduction,
     isTest: env.NODE_ENV === 'test',
@@ -22,6 +24,16 @@ export function getConfig(env = process.env) {
     jwtSecret: env.JWT_SECRET || (isProduction ? '' : developmentSecret),
     jwtExpiresIn: env.JWT_EXPIRES_IN?.trim() || '7d',
     corsOrigins: list(env.CORS_ORIGIN ?? (isProduction ? '' : 'http://localhost:5173')),
+    // When true, a new mess can be used without the super admin's approval.
+    signupAutoApprove: env.SIGNUP_AUTO_APPROVE?.trim() === 'true',
+    superAdmin:
+      superEmail && superPassword
+        ? {
+            name: env.SUPERADMIN_NAME?.trim() || 'Super Admin',
+            email: superEmail,
+            password: superPassword,
+          }
+        : null,
   }
 }
 

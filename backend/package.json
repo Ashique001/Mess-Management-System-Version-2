@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "node --watch --env-file-if-exists=.env src/local.js",
     "start": "node --env-file-if-exists=.env src/local.js",
+    "create-superadmin": "node --env-file-if-exists=.env scripts/create-superadmin.js",
     "test": "vitest run",
     "lint": "eslint ."
   },
