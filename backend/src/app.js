@@ -14,7 +14,10 @@ import { depositsRouter } from './routes/deposits.js'
 import { expensesRouter } from './routes/expenses.js'
 import { mealsRouter } from './routes/meals.js'
 import { membersRouter } from './routes/members.js'
+import { messRouter } from './routes/mess.js'
+import { platformRouter } from './routes/platform.js'
 import { reportsRouter } from './routes/reports.js'
+import { teamRouter } from './routes/team.js'
 import { ensureSuperAdmin } from './services/accounts.js'
 
 onConnect(ensureSuperAdmin)
@@ -52,6 +55,14 @@ app.use('/api/deposits', messOnly, depositsRouter)
 app.use('/api/expenses', messOnly, expensesRouter)
 app.use('/api/meals', messOnly, mealsRouter)
 app.use('/api/reports', messOnly, reportsRouter)
+
+// Only the mess admin manages managers and mess details.
+const messAdminOnly = [...messOnly, allow('admin')]
+app.use('/api/team', messAdminOnly, teamRouter)
+app.use('/api/mess', messAdminOnly, messRouter)
+
+// The platform owner.
+app.use('/api/platform', authenticate, allow('superadmin'), platformRouter)
 
 app.use(notFoundHandler)
 app.use(errorHandler)
