@@ -1,5 +1,7 @@
 // What the API sends out. Listing the fields keeps private ones from leaking.
 
+import { toTaka } from './calculations.js'
+
 export const userView = (user) => ({
   id: String(user._id),
   name: user.name,
@@ -21,3 +23,32 @@ export const messView = (mess) =>
   }
 
 export const sessionView = (user, mess) => ({ user: userView(user), mess: messView(mess) })
+
+export const memberView = (member) => ({
+  id: String(member._id),
+  name: member.name,
+  phone: member.phone,
+  active: member.active,
+})
+
+export const depositView = (deposit, member) => ({
+  id: String(deposit._id),
+  memberId: member ? String(member._id) : '',
+  memberName: member?.name ?? 'Unknown',
+  date: deposit.date,
+  amount: toTaka(deposit.amountPaisa),
+})
+
+export const expenseView = (expense) => ({
+  id: String(expense._id),
+  date: expense.date,
+  amount: toTaka(expense.amountPaisa),
+  description: expense.description,
+})
+
+export const pageView = (items, { page, limit, total }) => ({
+  items,
+  page,
+  total,
+  pages: Math.max(1, Math.ceil(total / limit)),
+})
