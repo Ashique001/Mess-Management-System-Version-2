@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import DataTable from '../components/DataTable.jsx'
 import { useFeedback } from '../components/Feedback.jsx'
-import { InactiveTag, PageHeader } from '../components/ui.jsx'
+import { Button, Card, Hint, InactiveTag, InlineField, PageHeader } from '../components/ui.jsx'
 import { useData } from '../data/store.jsx'
 import { sortByName } from '../lib/calculations.js'
 import { isValidDate, todayIso } from '../lib/format.js'
@@ -71,9 +71,10 @@ export default function Meals() {
   }
 
   const checkbox = (meal, label) => (row) => (
-    <label className="check">
+    <label className="inline-flex h-8 w-10 cursor-pointer items-center justify-center">
       <input
         type="checkbox"
+        className="size-5.5 accent-blue-600"
         checked={row[meal]}
         onChange={(e) => toggle(row.id, meal, e.target.checked)}
         aria-label={`${label} for ${row.name}`}
@@ -85,7 +86,7 @@ export default function Meals() {
     {
       key: 'name',
       label: 'Name',
-      className: 'wrap',
+      wrap: true,
       render: (row) => (
         <>
           {row.name} {!row.active && <InactiveTag />}
@@ -100,13 +101,15 @@ export default function Meals() {
   return (
     <>
       <PageHeader title="🍲 DAILY MEAL REGISTER" />
-      <section className="card">
-        <div className="toolbar">
-          <label className="inline-field">
-            <span>Select Date:</span>
-            <input type="date" value={date} onChange={(e) => changeDate(e.target.value)} />
-          </label>
-          <p className="hint">Check Lunch &amp; Dinner. Daily counts are tallied automatically.</p>
+      <Card>
+        <div className="mb-3.5 flex flex-wrap items-center gap-x-5 gap-y-2">
+          <InlineField
+            label="Select Date:"
+            type="date"
+            value={date}
+            onChange={(e) => changeDate(e.target.value)}
+          />
+          <Hint className="">Check Lunch &amp; Dinner. Daily counts are tallied automatically.</Hint>
         </div>
 
         <DataTable
@@ -119,16 +122,18 @@ export default function Meals() {
           }
         />
 
-        <div className="meals-footer">
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <strong className="total-meals">Total Meals: {totalMeals}</strong>
-            {dirty && <span className="unsaved">Unsaved changes</span>}
+            <strong className="text-xl text-blue-600">Total Meals: {totalMeals}</strong>
+            {dirty && (
+              <span className="ml-3 text-sm font-semibold text-amber-700">Unsaved changes</span>
+            )}
           </div>
-          <button type="button" className="btn btn-green" onClick={save} disabled={!rows.length}>
+          <Button variant="green" className="max-sm:w-full" onClick={save} disabled={!rows.length}>
             💾 Save Daily Entry
-          </button>
+          </Button>
         </div>
-      </section>
+      </Card>
     </>
   )
 }

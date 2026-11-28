@@ -47,6 +47,8 @@ export function DataProvider({ children }) {
         .filter(([name]) => name !== 'parseAmount')
         .map(([name, mutate]) => [
           name,
+          // Runs later, from event handlers, not while rendering.
+          // eslint-disable-next-line react-hooks/refs
           async (...args) => commit(mutate(latest.current, ...args)),
         ]),
     )

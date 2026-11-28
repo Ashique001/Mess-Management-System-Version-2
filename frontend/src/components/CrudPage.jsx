@@ -4,7 +4,7 @@
 import { useRef, useState } from 'react'
 import DataTable from './DataTable.jsx'
 import { useFeedback } from './Feedback.jsx'
-import { PageHeader } from './ui.jsx'
+import { Button, Card, Hint, PageHeader, SectionTitle } from './ui.jsx'
 
 export default function CrudPage({
   title,
@@ -41,7 +41,7 @@ export default function CrudPage({
     setSelectedId(row.id)
     setForm(toForm(row))
     // On narrow screens the form sits above the list, so bring it into view.
-    if (window.matchMedia('(max-width: 1100px)').matches) {
+    if (window.matchMedia('(max-width: 69rem)').matches) {
       formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
   }
@@ -83,23 +83,29 @@ export default function CrudPage({
   return (
     <>
       <PageHeader title={title} />
-      <div className="split">
-        <form ref={formRef} className="card form-card" onSubmit={handleAdd} noValidate>
-          <h2 className="section-title">{formTitle}</h2>
+      <div ref={formRef} className="grid scroll-mt-19 grid-cols-[minmax(0,1fr)] items-start gap-4.5 wide:grid-cols-[330px_minmax(0,1fr)]">
+        <Card as="form" onSubmit={handleAdd} noValidate>
+          <SectionTitle>{formTitle}</SectionTitle>
           {renderFields({ form, setField, selectedId })}
-          <div className="button-grid">
-            <button type="submit" className={`btn btn-${addTone}`}>{addLabel}</button>
-            <button type="button" className="btn btn-grey" onClick={handleUpdate}>Update</button>
-            <button type="button" className="btn btn-danger" onClick={handleDelete}>Delete</button>
-            <button type="button" className="btn btn-plain" onClick={clear}>Clear</button>
+          <div className="grid grid-cols-2 gap-2.5">
+            <Button type="submit" variant={addTone}>{addLabel}</Button>
+            <Button variant="grey" onClick={handleUpdate}>Update</Button>
+            <Button variant="danger" onClick={handleDelete}>Delete</Button>
+            <Button variant="plain" onClick={clear}>Clear</Button>
           </div>
-        </form>
+        </Card>
 
-        <section className="card list-card">
-          <h2 className="section-title">{listTitle}</h2>
-          <p className="hint">Select a row to edit or delete it.</p>
-          <DataTable columns={columns} rows={rows} selectedKey={selectedId} onRowClick={select} />
-        </section>
+        <Card>
+          <SectionTitle>{listTitle}</SectionTitle>
+          <Hint>Select a row to edit or delete it.</Hint>
+          <DataTable
+            className="max-h-[70vh] min-h-56 wide:max-h-[calc(100vh-250px)]"
+            columns={columns}
+            rows={rows}
+            selectedKey={selectedId}
+            onRowClick={select}
+          />
+        </Card>
       </div>
     </>
   )

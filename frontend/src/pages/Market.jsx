@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import CrudPage from '../components/CrudPage.jsx'
-import { Field } from '../components/ui.jsx'
+import { Field, Input, Textarea } from '../components/ui.jsx'
 import { useData } from '../data/store.jsx'
 import { formatDate, formatMoney, todayIso } from '../lib/format.js'
 
@@ -13,10 +13,10 @@ const toForm = (expense) => ({
 })
 
 const COLUMNS = [
-  { key: 'id', label: 'ID', className: 'hide-small' },
+  { key: 'id', label: 'ID', hideSmall: true },
   { key: 'date', label: 'Date', render: (e) => formatDate(e.date) },
   { key: 'amount', label: 'Amount', align: 'right', render: (e) => formatMoney(e.amount) },
-  { key: 'description', label: 'Description', className: 'wrap' },
+  { key: 'description', label: 'Description', wrap: true },
 ]
 
 export default function Market() {
@@ -44,10 +44,10 @@ export default function Market() {
       renderFields={({ form, setField }) => (
         <>
           <Field label="Expense Date:">
-            <input type="date" value={form.date} onChange={setField('date')} />
+            <Input type="date" value={form.date} onChange={setField('date')} />
           </Field>
           <Field label="Amount Spent (৳):">
-            <input
+            <Input
               inputMode="decimal"
               value={form.amount}
               onChange={setField('amount')}
@@ -55,7 +55,7 @@ export default function Market() {
             />
           </Field>
           <Field label="Bazar Items / Description:">
-            <textarea
+            <Textarea
               rows={5}
               value={form.description}
               onChange={setField('description')}
