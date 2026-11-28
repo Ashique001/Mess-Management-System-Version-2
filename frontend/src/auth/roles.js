@@ -17,4 +17,19 @@ const MESS_PAGES = [
   { to: '/reports', icon: '📈', label: 'Reports' },
 ]
 
-export const navigationFor = (role) => (role === 'superadmin' ? [] : MESS_PAGES)
+const ADMIN_PAGES = [
+  { to: '/team', icon: '🧑‍💼', label: 'Team' },
+  { to: '/settings', icon: '⚙️', label: 'Settings' },
+]
+
+const PLATFORM_PAGES = [{ to: '/platform', icon: '🛡️', label: 'Messes' }]
+
+const ACCOUNT = { to: '/account', icon: '🔑', label: 'My Account' }
+
+const NAVIGATION = {
+  superadmin: [...PLATFORM_PAGES, ACCOUNT],
+  admin: [...MESS_PAGES, ...ADMIN_PAGES, ACCOUNT],
+  manager: [...MESS_PAGES, ACCOUNT],
+}
+
+export const navigationFor = (role) => NAVIGATION[role] ?? [ACCOUNT]

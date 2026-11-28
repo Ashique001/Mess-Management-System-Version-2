@@ -4,7 +4,10 @@ import AuthShell from './components/AuthShell.jsx'
 import { FeedbackProvider } from './components/Feedback.jsx'
 import Layout from './components/Layout.jsx'
 import { ErrorState, Loading } from './components/State.jsx'
-import { Button, Card } from './components/ui.jsx'
+import { Button } from './components/ui.jsx'
+import Account from './pages/Account.jsx'
+import Settings from './pages/admin/Settings.jsx'
+import Team from './pages/admin/Team.jsx'
 import Login from './pages/auth/Login.jsx'
 import MessStatus from './pages/auth/MessStatus.jsx'
 import Register from './pages/auth/Register.jsx'
@@ -16,6 +19,8 @@ import Market from './pages/Market.jsx'
 import Meals from './pages/Meals.jsx'
 import Members from './pages/Members.jsx'
 import MonthlyOverview from './pages/MonthlyOverview.jsx'
+import MessDetail from './pages/platform/MessDetail.jsx'
+import Messes from './pages/platform/Messes.jsx'
 import Reports from './pages/Reports.jsx'
 
 /** Sends a visitor to the login page, remembering where they wanted to go. */
@@ -65,8 +70,13 @@ function AppRoutes() {
       <Route path="login" element={<AfterLogin />} />
       <Route path="register" element={<Navigate to="/" replace />} />
       <Route element={<Layout />}>
+        <Route path="account" element={<Account />} />
         {user.role === 'superadmin' ? (
-          <Route index element={<Card>The platform screens are not built yet.</Card>} />
+          <>
+            <Route index element={<Navigate to="/platform" replace />} />
+            <Route path="platform" element={<Messes />} />
+            <Route path="platform/messes/:messId" element={<MessDetail />} />
+          </>
         ) : (
           <>
             <Route index element={<Home />} />
@@ -77,6 +87,12 @@ function AppRoutes() {
             <Route path="meals" element={<Meals />} />
             <Route path="monthly" element={<MonthlyOverview />} />
             <Route path="reports" element={<Reports />} />
+            {user.role === 'admin' && (
+              <>
+                <Route path="team" element={<Team />} />
+                <Route path="settings" element={<Settings />} />
+              </>
+            )}
           </>
         )}
         <Route path="*" element={<Navigate to="/" replace />} />
