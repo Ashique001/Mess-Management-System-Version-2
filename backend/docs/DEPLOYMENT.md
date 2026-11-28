@@ -52,27 +52,30 @@ Open <http://localhost:5173> and log in as the super admin.
 1. At <https://vercel.com>, **Add New → Project** and import the repository.
 2. **Root Directory**: `backend`. Vercel recognises the Express app; leave the
    build settings empty.
-3. Add these **Environment Variables**:
+3. Add these **Environment Variables** for Production:
 
    | Name | Value |
    |---|---|
    | `MONGODB_URI` | The Atlas connection string |
    | `JWT_SECRET` | Output of `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"` |
-   | `SUPERADMIN_EMAIL` | Your email |
-   | `SUPERADMIN_PASSWORD` | A strong password |
+   | `SUPERADMIN_EMAIL` | Your email. Not needed if the database already has a super admin |
+   | `SUPERADMIN_PASSWORD` | A strong password. Same condition |
    | `CORS_ORIGIN` | Leave for step 4 |
 
 4. **Deploy**. Then open `https://YOUR-API.vercel.app/api/health`. It should
    show `{"status":"ok"}`.
-5. Optional: **Settings → Functions → Region**: choose the region closest to
-   your database.
+5. The functions run in the region named in `backend/vercel.json`: `bom1`
+   (Mumbai). Keep it next to your database. If the database is elsewhere,
+   change it to the closest
+   [Vercel region](https://vercel.com/docs/regions).
 
 ## 3. Website: second Vercel project
 
 1. **Add New → Project**, import the same repository again.
 2. **Root Directory**: `frontend`. Framework preset: **Vite**.
-3. Environment variable `VITE_API_URL` = `https://YOUR-API.vercel.app`
-   (no `/api`, no trailing slash).
+3. The API address comes from `frontend/.env.production`. Change it there if
+   your API has another address (no `/api`, no trailing slash). A
+   `VITE_API_URL` variable in this Vercel project overrides the file.
 4. **Deploy**.
 
 ## 4. Connect the two
@@ -96,7 +99,8 @@ Open <http://localhost:5173> and log in as the super admin.
 
 Add it to the website project under **Settings → Domains**, add the new address
 to `CORS_ORIGIN`, and redeploy the API. If the API also gets its own domain,
-update `VITE_API_URL` and redeploy the website.
+update `VITE_API_URL` (in `frontend/.env.production` or on Vercel) and redeploy
+the website.
 
 ## Troubleshooting
 
@@ -106,6 +110,7 @@ update `VITE_API_URL` and redeploy the website.
 | "The database is not reachable." | Atlas Network Access includes `0.0.0.0/0`; user, password and encoding in the connection string |
 | "Cannot reach the server" on the website | `VITE_API_URL` is correct, `CORS_ORIGIN` matches the website address exactly, both redeployed |
 | "The server gave an unexpected answer" | `VITE_API_URL` is missing or points at the website instead of the API |
+| `querySrv ECONNREFUSED` on your computer | Node cannot do the DNS lookup for `mongodb+srv://`. In `backend/.env` use the standard `mongodb://` string that lists the cluster's servers. Vercel is not affected. |
 | Super admin login fails | The log of the API project says "Super admin created" or why not. Or run `npm run create-superadmin` on your computer with the same `MONGODB_URI`. |
 | Preview deployments cannot reach the API | Their address differs; add it to `CORS_ORIGIN` or test on the production address |
 | First request is slow | Free hosting starts the function and database connection on demand |
