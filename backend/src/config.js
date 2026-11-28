@@ -13,7 +13,9 @@ const list = (text) =>
     .filter(Boolean)
 
 export function getConfig(env = process.env) {
-  const isProduction = env.NODE_ENV === 'production'
+  // Vercel counts too, so that a deployment never falls back to the
+  // development settings.
+  const isProduction = env.NODE_ENV === 'production' || Boolean(env.VERCEL)
   const superEmail = env.SUPERADMIN_EMAIL?.trim().toLowerCase()
   const superPassword = env.SUPERADMIN_PASSWORD
   return {
@@ -43,4 +45,16 @@ export function configProblems(config = getConfig()) {
   if (!config.mongodbUri) problems.push('MONGODB_URI is not set.')
   if (config.jwtSecret.length < 32) problems.push('JWT_SECRET must be at least 32 characters.')
   return problems
+}
+
+/** Settings that are probably a mistake, but do not stop the API. */
+export function configWarnings(config = getConfig()) {
+  const warnings = []
+  if (config.isProduction && !config.corsOrigins.length) {
+    warnings.push('CORS_ORIGIN is not set, so no website can call this API from a browser.')
+  }
+  if (config.corsOrigins.includes('*')) {
+    warnings.push('CORS_ORIGIN does not accept "*". List the website addresses.')
+  }
+  return warnings
 }

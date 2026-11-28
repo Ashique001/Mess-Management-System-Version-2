@@ -1,10 +1,16 @@
-import { configProblems, getConfig } from '../config.js'
+import { configProblems, configWarnings, getConfig } from '../config.js'
 import { connectDb } from '../db.js'
 import { AppError } from '../lib/errors.js'
+
+let warned = false
 
 /** Makes sure the settings are complete and the database is connected. */
 export async function requireDatabase(req, res, next) {
   const config = getConfig()
+  if (!warned) {
+    warned = true
+    for (const warning of configWarnings(config)) console.warn(warning)
+  }
   const problems = configProblems(config)
   if (problems.length) {
     console.error(`Server is not configured: ${problems.join(' ')}`)

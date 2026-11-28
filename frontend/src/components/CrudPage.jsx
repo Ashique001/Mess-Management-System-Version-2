@@ -104,7 +104,10 @@ export default function CrudPage({
       >
         <Card as="form" onSubmit={handleAdd} noValidate>
           <SectionTitle>{formTitle}</SectionTitle>
-          {renderFields({ form, setField })}
+          {/* Locked while saving, so nothing typed meanwhile gets cleared. */}
+          <fieldset disabled={busy} className="min-w-0">
+            {renderFields({ form, setField })}
+          </fieldset>
           <div className="grid grid-cols-2 gap-2.5">
             <Button type="submit" variant={addTone} disabled={busy}>
               {addLabel}

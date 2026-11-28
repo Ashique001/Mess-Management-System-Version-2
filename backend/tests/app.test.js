@@ -1,7 +1,7 @@
 import request from 'supertest'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import app from '../src/app.js'
-import { configProblems, getConfig } from '../src/config.js'
+import { configProblems, configWarnings, getConfig } from '../src/config.js'
 import { useTestDatabase } from './setup.js'
 
 useTestDatabase()
@@ -39,6 +39,23 @@ describe('config', () => {
   it('needs a database and a secret in production', () => {
     const problems = configProblems(getConfig({ NODE_ENV: 'production' }))
     expect(problems).toHaveLength(2)
+  })
+
+  it('treats Vercel as production', () => {
+    const config = getConfig({ VERCEL: '1' })
+    expect(config.jwtSecret).toBe('')
+    expect(config.corsOrigins).toEqual([])
+    expect(configWarnings(config)).toHaveLength(1)
+  })
+
+  it('says so when it is not configured', async () => {
+    vi.stubEnv('MONGODB_URI', '')
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const response = await request(app).get('/api/health')
+    expect(response.status).toBe(503)
+    expect(response.body.error.code).toBe('NOT_CONFIGURED')
+    vi.unstubAllEnvs()
+    vi.restoreAllMocks()
   })
 
   it('removes trailing slashes from allowed websites', () => {
