@@ -1,41 +1,35 @@
 import { useEffect, useState } from 'react'
 import DataTable from '../components/DataTable.jsx'
 import { useFeedback } from '../components/Feedback.jsx'
-import { Button, Card, Hint, InactiveTag, InlineField, PageHeader } from '../components/ui.jsx'
-import { useData } from '../data/store.jsx'
-import { sortByName } from '../lib/calculations.js'
+import { Loaded } from '../components/State.jsx'
+import {
+  Button,
+  Card,
+  Hint,
+  InactiveTag,
+  InlineField,
+  Notice,
+  PageHeader,
+} from '../components/ui.jsx'
+import { useApi } from '../hooks/useApi.js'
+import { api } from '../lib/api.js'
 import { isValidDate, todayIso } from '../lib/format.js'
 
 export default function Meals() {
-  const { data, actions } = useData()
   const { notify, confirm } = useFeedback()
   const [date, setDate] = useState(todayIso)
   // Ticks changed on screen but not saved yet, by member id.
   const [changes, setChanges] = useState({})
+  const [saving, setSaving] = useState(false)
+  const query = useApi(isValidDate(date) ? `/meals/${date}` : null)
 
-  const saved = new Set(
-    data.meals.filter((m) => m.date === date).map((m) => `${m.memberId}|${m.type}`),
-  )
-
-  // Active members, plus inactive members who already have a meal on this day.
-  const rows = isValidDate(date)
-    ? sortByName(
-        data.members.filter(
-          (m) => m.active || saved.has(`${m.id}|Lunch`) || saved.has(`${m.id}|Dinner`),
-        ),
-      ).map((member) => {
-        const stored = {
-          lunch: saved.has(`${member.id}|Lunch`),
-          dinner: saved.has(`${member.id}|Dinner`),
-        }
-        const shown = { ...stored, ...changes[member.id] }
-        return {
-          ...member,
-          ...shown,
-          changed: shown.lunch !== stored.lunch || shown.dinner !== stored.dinner,
-        }
-      })
-    : []
+  const rows = (query.data?.members ?? []).map((member) => {
+    const shown = { ...member, ...changes[member.id] }
+    return {
+      ...shown,
+      changed: shown.lunch !== member.lunch || shown.dinner !== member.dinner,
+    }
+  })
 
   const totalMeals = rows.reduce((sum, r) => sum + r.lunch + r.dinner, 0)
   const dirty = rows.some((r) => r.changed)
@@ -52,21 +46,26 @@ export default function Meals() {
     setChanges((current) => ({ ...current, [id]: { ...current[id], [meal]: checked } }))
 
   const changeDate = async (next) => {
-    if (dirty && !(await confirm('Discard the unsaved meals for this date?', 'Yes, discard'))) return
+    if (dirty && !(await confirm('Discard the unsaved meals for this date?', 'Yes, discard'))) {
+      return
+    }
     setChanges({})
     setDate(next)
   }
 
   const save = async () => {
+    setSaving(true)
     try {
-      await actions.saveMeals(
-        date,
-        rows.map(({ id, lunch, dinner }) => ({ memberId: id, lunch, dinner })),
-      )
+      const saved = await api.put(`/meals/${date}`, {
+        entries: rows.map(({ id, lunch, dinner }) => ({ memberId: id, lunch, dinner })),
+      })
+      query.setData(saved)
       setChanges({})
       notify('Meals saved successfully!')
     } catch (error) {
       notify(error.message, 'error')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -76,6 +75,7 @@ export default function Meals() {
         type="checkbox"
         className="size-5.5 accent-blue-600"
         checked={row[meal]}
+        disabled={saving}
         onChange={(e) => toggle(row.id, meal, e.target.checked)}
         aria-label={`${label} for ${row.name}`}
       />
@@ -107,32 +107,45 @@ export default function Meals() {
             label="Select Date:"
             type="date"
             value={date}
+            disabled={saving}
             onChange={(e) => changeDate(e.target.value)}
           />
           <Hint className="">Check Lunch &amp; Dinner. Daily counts are tallied automatically.</Hint>
         </div>
 
-        <DataTable
-          columns={columns}
-          rows={rows}
-          emptyText={
-            isValidDate(date)
-              ? 'No active members. Add one on the Members page.'
-              : 'Please choose a valid date.'
-          }
-        />
-
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <strong className="text-xl text-blue-600">Total Meals: {totalMeals}</strong>
-            {dirty && (
-              <span className="ml-3 text-sm font-semibold text-amber-700">Unsaved changes</span>
+        {isValidDate(date) ? (
+          <Loaded query={query}>
+            {() => (
+              <>
+                <DataTable
+                  columns={columns}
+                  rows={rows}
+                  emptyText="No active members. Add one on the Members page."
+                />
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <strong className="text-xl text-blue-600">Total Meals: {totalMeals}</strong>
+                    {dirty && (
+                      <span className="ml-3 text-sm font-semibold text-amber-700">
+                        Unsaved changes
+                      </span>
+                    )}
+                  </div>
+                  <Button
+                    variant="green"
+                    className="max-sm:w-full"
+                    onClick={save}
+                    disabled={saving || !rows.length}
+                  >
+                    {saving ? 'Saving…' : '💾 Save Daily Entry'}
+                  </Button>
+                </div>
+              </>
             )}
-          </div>
-          <Button variant="green" className="max-sm:w-full" onClick={save} disabled={!rows.length}>
-            💾 Save Daily Entry
-          </Button>
-        </div>
+          </Loaded>
+        ) : (
+          <Notice>Please choose a valid date.</Notice>
+        )}
       </Card>
     </>
   )

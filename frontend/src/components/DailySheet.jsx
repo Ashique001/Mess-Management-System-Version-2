@@ -22,7 +22,8 @@ const HEAD = `${CELL} sticky top-0 font-semibold text-slate-600`
 const FOOT = `${CELL} sticky bottom-0 border-t-2 border-t-blue-200 bg-blue-50 font-bold text-blue-700`
 const SELECTED = 'bg-blue-500 text-white'
 
-export default function DailySheet({ members, days, summary, mealCount }) {
+/** `members` holds each member's id, name and lunch and dinner totals. */
+export default function DailySheet({ members, days, mealCount }) {
   const [selectedDate, setSelectedDate] = useState(null)
   const colour = (index) => COLOURS[index % COLOURS.length]
 
@@ -85,7 +86,7 @@ export default function DailySheet({ members, days, summary, mealCount }) {
             <th scope="row" className={`${FOOT} left-0 z-3 text-left`}>
               মোট মিল (Total)
             </th>
-            {summary.map((row) =>
+            {members.map((row) =>
               ['lunch', 'dinner'].map((meal) => (
                 <td key={row.id + meal} className={`${FOOT} z-2`}>
                   {row[meal]}

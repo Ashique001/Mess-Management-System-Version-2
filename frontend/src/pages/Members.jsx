@@ -1,6 +1,7 @@
 import CrudPage from '../components/CrudPage.jsx'
 import { Field, InactiveTag, Input, Select, Tag } from '../components/ui.jsx'
-import { useData } from '../data/store.jsx'
+import { useApi } from '../hooks/useApi.js'
+import { api } from '../lib/api.js'
 
 const emptyForm = () => ({ name: '', phone: '', status: 'Active' })
 
@@ -13,7 +14,6 @@ const toForm = (member) => ({
 const toInput = ({ name, phone, status }) => ({ name, phone, active: status === 'Active' })
 
 const COLUMNS = [
-  { key: 'id', label: 'ID', hideSmall: true },
   { key: 'name', label: 'Name', wrap: true },
   { key: 'phone', label: 'Phone', render: (m) => m.phone || '—' },
   {
@@ -24,7 +24,7 @@ const COLUMNS = [
 ]
 
 export default function Members() {
-  const { data, actions } = useData()
+  const query = useApi('/members')
 
   return (
     <CrudPage
@@ -36,14 +36,19 @@ export default function Members() {
       emptyForm={emptyForm}
       toForm={toForm}
       columns={COLUMNS}
-      rows={data.members}
-      onAdd={(form) => actions.addMember(toInput(form))}
-      onUpdate={(id, form) => actions.updateMember(id, toInput(form))}
-      onDelete={actions.deleteMember}
+      query={query}
+      onAdd={(form) => api.post('/members', toInput(form))}
+      onUpdate={(id, form) => api.put(`/members/${id}`, toInput(form))}
+      onDelete={(id) => api.delete(`/members/${id}`)}
       renderFields={({ form, setField }) => (
         <>
           <Field label="Full Name:">
-            <Input value={form.name} onChange={setField('name')} maxLength={100} autoComplete="off" />
+            <Input
+              value={form.name}
+              onChange={setField('name')}
+              maxLength={100}
+              autoComplete="off"
+            />
           </Field>
           <Field label="Phone Number:">
             <Input

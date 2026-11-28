@@ -4,6 +4,8 @@
 import { useRef, useState } from 'react'
 import DataTable from './DataTable.jsx'
 import { useFeedback } from './Feedback.jsx'
+import Pagination from './Pagination.jsx'
+import { Loaded } from './State.jsx'
 import { Button, Card, Hint, PageHeader, SectionTitle } from './ui.jsx'
 
 export default function CrudPage({
@@ -16,7 +18,9 @@ export default function CrudPage({
   emptyForm,
   toForm,
   columns,
-  rows,
+  // A useApi query whose data is { items, page?, pages?, total? }.
+  query,
+  onPageChange,
   onAdd,
   onUpdate,
   onDelete,
@@ -24,8 +28,9 @@ export default function CrudPage({
 }) {
   const { notify, confirm } = useFeedback()
   const [form, setForm] = useState(emptyForm)
-  const [selectedId, setSelectedId] = useState(null)
-  const formRef = useRef(null)
+  const [selected, setSelected] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const topRef = useRef(null)
 
   const setField = (name) => (event) => {
     const { value } = event.target
@@ -34,30 +39,35 @@ export default function CrudPage({
 
   const clear = () => {
     setForm(emptyForm())
-    setSelectedId(null)
+    setSelected(null)
   }
 
   const select = (row) => {
-    setSelectedId(row.id)
+    setSelected(row)
     setForm(toForm(row))
     // On narrow screens the form sits above the list, so bring it into view.
     if (window.matchMedia('(max-width: 69rem)').matches) {
-      formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      topRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
   }
 
+  // One change at a time, so a double click cannot save a record twice.
   const run = async (action, successMessage) => {
+    setBusy(true)
     try {
       await action()
       notify(successMessage)
       clear()
+      query.reload()
     } catch (error) {
       notify(error.message, 'error')
+    } finally {
+      setBusy(false)
     }
   }
 
   const needSelection = () => {
-    if (selectedId != null) return false
+    if (selected) return false
     notify(`Please select ${noun === 'expense' ? 'an' : 'a'} ${noun} first.`, 'warning')
     return true
   }
@@ -66,45 +76,70 @@ export default function CrudPage({
 
   const handleAdd = (event) => {
     event.preventDefault()
-    run(() => onAdd(form), `${label} added successfully!`)
+    if (!busy) run(() => onAdd(form), `${label} added successfully!`)
   }
 
   const handleUpdate = () => {
     if (needSelection()) return
-    run(() => onUpdate(selectedId, form), `${label} updated successfully!`)
+    run(() => onUpdate(selected.id, form), `${label} updated successfully!`)
   }
 
   const handleDelete = async () => {
     if (needSelection()) return
     if (!(await confirm(`Are you sure you want to delete this ${noun}?`, 'Yes, delete'))) return
-    run(() => onDelete(selectedId), `${label} deleted successfully!`)
+    run(() => onDelete(selected.id), `${label} deleted successfully!`)
+  }
+
+  const changePage = (page) => {
+    clear()
+    onPageChange(page)
   }
 
   return (
     <>
       <PageHeader title={title} />
-      <div ref={formRef} className="grid scroll-mt-19 grid-cols-[minmax(0,1fr)] items-start gap-4.5 wide:grid-cols-[330px_minmax(0,1fr)]">
+      <div
+        ref={topRef}
+        className="grid scroll-mt-19 grid-cols-[minmax(0,1fr)] items-start gap-4.5 wide:grid-cols-[330px_minmax(0,1fr)]"
+      >
         <Card as="form" onSubmit={handleAdd} noValidate>
           <SectionTitle>{formTitle}</SectionTitle>
-          {renderFields({ form, setField, selectedId })}
+          {renderFields({ form, setField })}
           <div className="grid grid-cols-2 gap-2.5">
-            <Button type="submit" variant={addTone}>{addLabel}</Button>
-            <Button variant="grey" onClick={handleUpdate}>Update</Button>
-            <Button variant="danger" onClick={handleDelete}>Delete</Button>
-            <Button variant="plain" onClick={clear}>Clear</Button>
+            <Button type="submit" variant={addTone} disabled={busy}>
+              {addLabel}
+            </Button>
+            <Button variant="grey" onClick={handleUpdate} disabled={busy}>
+              Update
+            </Button>
+            <Button variant="danger" onClick={handleDelete} disabled={busy}>
+              Delete
+            </Button>
+            <Button variant="plain" onClick={clear} disabled={busy}>
+              Clear
+            </Button>
           </div>
         </Card>
 
         <Card>
           <SectionTitle>{listTitle}</SectionTitle>
           <Hint>Select a row to edit or delete it.</Hint>
-          <DataTable
-            className="max-h-[70vh] min-h-56 wide:max-h-[calc(100vh-250px)]"
-            columns={columns}
-            rows={rows}
-            selectedKey={selectedId}
-            onRowClick={select}
-          />
+          <Loaded query={query}>
+            {({ items, page, pages, total }) => (
+              <>
+                <DataTable
+                  className="max-h-[70vh] min-h-56 wide:max-h-[calc(100vh-290px)]"
+                  columns={columns}
+                  rows={items}
+                  selectedKey={selected?.id}
+                  onRowClick={select}
+                />
+                {onPageChange && (
+                  <Pagination page={page} pages={pages} total={total} onChange={changePage} />
+                )}
+              </>
+            )}
+          </Loaded>
         </Card>
       </div>
     </>

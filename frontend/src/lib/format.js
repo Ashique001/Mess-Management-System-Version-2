@@ -26,14 +26,10 @@ export const isValidDate = (iso) => {
   return year >= 2000 && year <= 2100 && toIso(fromIso(iso)) === iso
 }
 
-/** Every date from `from` to `to`, both included. */
-export const datesBetween = (from, to) => {
-  const dates = []
-  for (let d = fromIso(from); toIso(d) <= to; d.setDate(d.getDate() + 1)) {
-    dates.push(toIso(d))
-  }
-  return dates
-}
+/** How many days from `from` to `to`, both included. */
+export const dayCount = (from, to) =>
+  // Rounding absorbs the hour gained or lost at a daylight saving change.
+  Math.round((fromIso(to) - fromIso(from)) / 86_400_000) + 1
 
 /** 2026-11-05 -> 05-11-2026 */
 export const formatDate = (iso) => iso.split('-').reverse().join('-')

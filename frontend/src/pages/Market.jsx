@@ -1,7 +1,6 @@
-import { useMemo } from 'react'
 import CrudPage from '../components/CrudPage.jsx'
 import { Field, Input, Textarea } from '../components/ui.jsx'
-import { useData } from '../data/store.jsx'
+import { usePagedList } from '../hooks/usePagedList.js'
 import { formatDate, formatMoney, todayIso } from '../lib/format.js'
 
 const emptyForm = () => ({ date: todayIso(), amount: '', description: '' })
@@ -13,19 +12,13 @@ const toForm = (expense) => ({
 })
 
 const COLUMNS = [
-  { key: 'id', label: 'ID', hideSmall: true },
   { key: 'date', label: 'Date', render: (e) => formatDate(e.date) },
   { key: 'amount', label: 'Amount', align: 'right', render: (e) => formatMoney(e.amount) },
   { key: 'description', label: 'Description', wrap: true },
 ]
 
 export default function Market() {
-  const { data, actions } = useData()
-
-  const rows = useMemo(
-    () => [...data.expenses].sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id),
-    [data],
-  )
+  const list = usePagedList('/expenses')
 
   return (
     <CrudPage
@@ -37,10 +30,11 @@ export default function Market() {
       emptyForm={emptyForm}
       toForm={toForm}
       columns={COLUMNS}
-      rows={rows}
-      onAdd={actions.addExpense}
-      onUpdate={actions.updateExpense}
-      onDelete={actions.deleteExpense}
+      query={list.query}
+      onPageChange={list.setPage}
+      onAdd={list.add}
+      onUpdate={list.update}
+      onDelete={list.remove}
       renderFields={({ form, setField }) => (
         <>
           <Field label="Expense Date:">
